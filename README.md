@@ -72,9 +72,13 @@ docker compose ps        # 等待 healthy
 
 # 4. 后端(新终端, 在 backend/ 下)
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+# 方式 A(推荐): conda 虚拟环境
+conda create -y -n edu_platform python=3.11
+conda activate edu_platform
+# 方式 B: venv
+#   python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-alembic upgrade head          # 初始化/迁移表结构
+alembic upgrade head          # 初始化/迁移表结构(需 MySQL 已就绪)
 uvicorn app.main:app --reload --port 8000
 
 # 5. 前端(新终端, 在 frontend/ 下)
@@ -116,6 +120,16 @@ npm run lint
 - 分页 `data`：`{ "items": [], "total": 0, "page": 1, "page_size": 20 }`。
 - 除 `/auth/register`、`/auth/login` 外所有接口需认证。
 - Swagger：`http://localhost:8000/docs`。
+
+## 当前已实现（Day1 骨架）
+
+已可运行的最小闭环，供各模块在其上并行开发：
+
+- **后端**：认证接口 `/api/v1/auth/{register,login,refresh,logout,me}` + `/health`；JWT 存 HttpOnly Cookie + CSRF 双提交中间件；统一响应体与异常处理；`users` 表模型与 Alembic 迁移（`0001`）。
+- **前端**：登录 / 注册 / 首页；Axios 全局封装（`withCredentials` + CSRF 拦截器 + 401 自动 refresh）；Pinia 用户 store；路由登录守卫。
+- **验证**：后端认证闭环已通过 TestClient 冷烟测试；前端 `npm run build` 通过。
+
+> ⚠️ 端到端跑通需先 `docker compose up -d mysql` 并 `alembic upgrade head` 建表。其余业务模块（课程/学习/答疑/考试/分析）尚未实现，按 `docs/database-schema.md` 与各分层 `CLAUDE.md` 开发。
 
 ## 分支与 PR 流程
 
