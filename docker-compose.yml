@@ -1,0 +1,93 @@
+# 在线教育学习平台 — 本地开发基础设施编排
+# 用法: docker compose up -d mysql redis chromadb
+# 说明: 后端/前端服务先以注释占位, Day1 起环境时按需放开(镜像构建见各自 Dockerfile)。
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: edu_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-change_me}
+      MYSQL_DATABASE: ${DB_NAME:-edu_platform}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-change_me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: edu_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  chromadb:
+    image: chromadb/chroma:0.5.5
+    container_name: edu_chromadb
+    restart: unless-stopped
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    # 容器内 Chroma 监听 8000; 宿主用 8001 暴露, 把宿主 8000 留给后端 uvicorn
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/heartbeat')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ===== 应用服务(Day1 起环境时放开) =====
+  # backend:
+  #   build: ./backend
+  #   container_name: edu_backend
+  #   restart: unless-stopped
+  #   env_file: ./backend/.env
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ./backend/uploads:/app/uploads
+  #     - ./backend/chroma_data:/app/chroma_data
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     chromadb:
+  #       condition: service_healthy
+
+  # frontend:
+  #   build: ./frontend
+  #   container_name: edu_frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5173:80"
+  #   depends_on:
+  #     - backend
+
+volumes:
+  mysql_data:
+  redis_data:
+  chroma_data:
