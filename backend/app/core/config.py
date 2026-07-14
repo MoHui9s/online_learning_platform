@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     # 数据库
     DB_HOST: str = "localhost"
-    DB_PORT: int = 3306
+    DB_PORT: int = 3307  # 宿主 3306 被占用，改用 3307（见 docker-compose 端口映射）
     DB_USER: str = "root"
     DB_PASSWORD: str = "change_me"
     DB_NAME: str = "edu_platform"

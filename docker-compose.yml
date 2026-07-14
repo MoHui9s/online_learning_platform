@@ -15,7 +15,8 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     ports:
-      - "3306:3306"
+      # 宿主 3306 被占用，改用 3307 映射到容器内 3306
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
