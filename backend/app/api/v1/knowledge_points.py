@@ -1,4 +1,4 @@
-"""知识点 CRUD。"""
+"""知识点 CRUD（挂在课程路由下）。"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -10,7 +10,7 @@ from app.models.user import User
 from app.schemas.common import success
 from app.schemas.exam import KnowledgePointCreate, KnowledgePointOut, KnowledgePointUpdate
 
-router = APIRouter(prefix="/knowledge-points", tags=["knowledge-points"])
+router = APIRouter(prefix="/courses/{course_id}/knowledge-points", tags=["knowledge-points"])
 
 
 def _build_tree(points: list[KnowledgePoint], parent_id: int | None = None) -> list[dict]:
@@ -29,7 +29,7 @@ def list_knowledge_points(
     course_id: int,
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
-):
+) -> dict:
     """按课程查询知识点树。"""
     points = db.execute(
         select(KnowledgePoint).where(KnowledgePoint.course_id == course_id)
@@ -39,12 +39,13 @@ def list_knowledge_points(
 
 @router.post("")
 def create_knowledge_point(
+    course_id: int,
     payload: KnowledgePointCreate,
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
-):
+) -> dict:
     """创建知识点（教师/admin）。"""
-    kp = KnowledgePoint(**payload.model_dump())
+    kp = KnowledgePoint(course_id=course_id, **payload.model_dump())
     db.add(kp)
     db.commit()
     db.refresh(kp)
@@ -53,14 +54,17 @@ def create_knowledge_point(
 
 @router.put("/{kp_id}")
 def update_knowledge_point(
+    course_id: int,
     kp_id: int,
     payload: KnowledgePointUpdate,
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
-):
+) -> dict:
     """更新知识点。"""
     kp = db.execute(
-        select(KnowledgePoint).where(KnowledgePoint.id == kp_id)
+        select(KnowledgePoint).where(
+            KnowledgePoint.id == kp_id, KnowledgePoint.course_id == course_id
+        )
     ).scalar_one_or_none()
     if not kp:
         raise HTTPException(status_code=404, detail="知识点不存在")
@@ -73,13 +77,16 @@ def update_knowledge_point(
 
 @router.delete("/{kp_id}")
 def delete_knowledge_point(
+    course_id: int,
     kp_id: int,
     db: Session = Depends(get_db),
     current: User = Depends(get_current_user),
-):
+) -> dict:
     """删除知识点。"""
     kp = db.execute(
-        select(KnowledgePoint).where(KnowledgePoint.id == kp_id)
+        select(KnowledgePoint).where(
+            KnowledgePoint.id == kp_id, KnowledgePoint.course_id == course_id
+        )
     ).scalar_one_or_none()
     if not kp:
         raise HTTPException(status_code=404, detail="知识点不存在")

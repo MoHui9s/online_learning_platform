@@ -9,7 +9,6 @@ from app.models.question import QuestionType
 
 # ===================== 知识点 =====================
 class KnowledgePointCreate(BaseModel):
-    course_id: int
     parent_id: int | None = None
     name: str = Field(min_length=1, max_length=128)
     description: str | None = None
@@ -99,7 +98,11 @@ class ExamCreate(BaseModel):
     pass_score: int = Field(default=60, ge=1)
     start_time: datetime | None = None
     end_time: datetime | None = None
-    questions: list["ExamQuestionItem"] = []  # 组卷题目
+
+
+class ExamSetQuestions(BaseModel):
+    """组卷：向考试添加题目。"""
+    questions: list["ExamQuestionItem"]
 
 
 class ExamQuestionItem(BaseModel):
