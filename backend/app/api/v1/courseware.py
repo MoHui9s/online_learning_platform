@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.models.chapter import Chapter
 from app.models.courseware import Courseware, CoursewareType
 from app.models.user import User
 from app.schemas.common import success
@@ -36,8 +37,11 @@ async def upload_courseware(
         "doc": CoursewareType.doc,
     }
 
-    # 构建存储路径（需要 chapter → course，先假设 course_id 通过参数或查 chapter 获取）
-    dest_path = build_storage_path(settings.UPLOAD_DIR, 0, chapter_id, ext)
+    # 从 chapter 获取真实 course_id
+    chapter = db.get(Chapter, chapter_id)
+    if not chapter:
+        raise HTTPException(status_code=404, detail="章节不存在")
+    dest_path = build_storage_path(settings.UPLOAD_DIR, chapter.course_id, chapter_id, ext)
     file_size = await save_upload(file, dest_path)
 
     courseware = Courseware(

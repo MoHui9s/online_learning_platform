@@ -45,36 +45,30 @@ def list_questions(
     current: User = Depends(get_current_user),
 ):
     """按课程分页查题目，支持类型/难度/知识点筛选。"""
+    # 构建基础查询
     stmt = select(Question).where(Question.course_id == course_id)
+    count_stmt = select(Question.id).where(Question.course_id == course_id)
+
     if type:
         stmt = stmt.where(Question.type == type)
+        count_stmt = count_stmt.where(Question.type == type)
     if difficulty:
         stmt = stmt.where(Question.difficulty == difficulty)
+        count_stmt = count_stmt.where(Question.difficulty == difficulty)
     if knowledge_point_id:
         stmt = stmt.join(
             QuestionKnowledgePoint,
             QuestionKnowledgePoint.question_id == Question.id,
         ).where(QuestionKnowledgePoint.knowledge_point_id == knowledge_point_id)
-
-    total = db.execute(
-        select(Question).where(Question.course_id == course_id)
-    ).scalars().count()  # 简化版，生产应加 count 子查询
-    # Recalculate with filters
-    sub = stmt
-    total_stmt = select(Question.id).where(Question.course_id == course_id)
-    if type:
-        total_stmt = total_stmt.where(Question.type == type)
-    if difficulty:
-        total_stmt = total_stmt.where(Question.difficulty == difficulty)
-    if knowledge_point_id:
-        total_stmt = total_stmt.join(
+        count_stmt = count_stmt.join(
             QuestionKnowledgePoint,
             QuestionKnowledgePoint.question_id == Question.id,
         ).where(QuestionKnowledgePoint.knowledge_point_id == knowledge_point_id)
-    total = len(db.execute(total_stmt).scalars().all())
+
+    total = len(db.execute(count_stmt).scalars().all())
 
     items = db.execute(
-        stmt.offset((page - 1) * page_size).limit(page_size)
+        stmt.order_by(Question.id.desc()).offset((page - 1) * page_size).limit(page_size)
     ).scalars().all()
 
     result = []
