@@ -6,6 +6,8 @@ from app.models.courseware import Courseware
 from app.models.knowledge_point import KnowledgePoint
 from app.models.question import Question, QuestionKnowledgePoint
 from app.models.exam import Exam, ExamQuestion, ExamRecord, WrongQuestion
+from app.models.qa_history import QAHistory
+from app.models.learning import Enrollment, LearningRecord, LearningCalendar
 
 __all__ = [
     "User",
@@ -19,4 +21,8 @@ __all__ = [
     "ExamQuestion",
     "ExamRecord",
     "WrongQuestion",
+    "QAHistory",
+    "Enrollment",
+    "LearningRecord",
+    "LearningCalendar",
 ]

@@ -2,10 +2,13 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    assistant,
     auth,
     exams,
     knowledge_points,
+    qa,
     questions,
+    stats,
     wrong_questions,
 )
 
@@ -16,3 +19,6 @@ api_router.include_router(questions.router)
 api_router.include_router(exams.router)
 api_router.include_router(exams.my_router)
 api_router.include_router(wrong_questions.router)
+api_router.include_router(qa.router)
+api_router.include_router(assistant.router)
+api_router.include_router(stats.router)
