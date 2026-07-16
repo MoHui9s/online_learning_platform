@@ -1,7 +1,7 @@
 """知识点模型（knowledge_points 表）。"""
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base
@@ -11,9 +11,13 @@ class KnowledgePoint(Base):
     __tablename__ = "knowledge_points"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    course_id: Mapped[int] = mapped_column()  # FK→courses.id
-    parent_id: Mapped[int | None] = mapped_column(nullable=True)  # FK→knowledge_points.id
-    name: Mapped[str] = mapped_column(String(128))
+    course_id: Mapped[int] = mapped_column(
+        ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("knowledge_points.id", ondelete="SET NULL"), nullable=True
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

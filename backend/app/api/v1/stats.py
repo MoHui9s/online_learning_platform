@@ -13,7 +13,9 @@ from app.core.deps import get_current_user
 from app.models.exam import Exam, ExamRecord, ExamRecordStatus, WrongQuestion
 from app.models.knowledge_point import KnowledgePoint
 from app.models.question import Question, QuestionKnowledgePoint
-from app.models.learning import Enrollment, LearningCalendar, LearningRecord
+from app.models.enrollment import Enrollment
+from app.models.learning_calendar import LearningCalendar
+from app.models.learning_record import LearningRecord
 from app.models.user import User
 from app.schemas.common import success
 from app.schemas.qa import (
