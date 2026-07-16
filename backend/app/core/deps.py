@@ -1,4 +1,4 @@
-"""通用依赖：从 HttpOnly Cookie 解析当前用户。
+"""通用依赖：从 HttpOnly Cookie 解析当前用户 + 角色校验。
 
 对齐关键决策 1：鉴权靠 access_token cookie，不读 Authorization header。
 """
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_token
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 def get_current_user(
@@ -33,3 +33,17 @@ def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="用户不存在或已停用"
         )
     return user
+
+
+def require_admin(current: User = Depends(get_current_user)) -> User:
+    """仅 admin 可访问。"""
+    if current.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要管理员权限")
+    return current
+
+
+def require_teacher(current: User = Depends(get_current_user)) -> User:
+    """admin 或 teacher 可访问。"""
+    if current.role not in (UserRole.admin, UserRole.teacher):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="需要教师权限")
+    return current

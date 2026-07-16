@@ -20,6 +20,14 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=6, max_length=128)
 
 
+class UpdateProfileRequest(BaseModel):
+    """PUT /users/me：昵称/头像/改密（全部可选，只更新传入字段）。"""
+    nickname: str | None = Field(default=None, max_length=64)
+    avatar_url: str | None = Field(default=None, max_length=512)
+    current_password: str | None = Field(default=None, min_length=6, max_length=128)
+    new_password: str | None = Field(default=None, min_length=6, max_length=128)
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,9 +1,20 @@
-"""课件 Pydantic v2 模型。"""
+"""课件 Schema。"""
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.courseware import CoursewareType
+
+
+class CoursewareCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    type: CoursewareType
+    sort_order: int = 0
+
+
+class CoursewareUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    sort_order: int | None = None
 
 
 class CoursewareOut(BaseModel):
@@ -21,4 +32,3 @@ class CoursewareOut(BaseModel):
     sort_order: int
     uploaded_by: int | None = None
     created_at: datetime
-    updated_at: datetime
