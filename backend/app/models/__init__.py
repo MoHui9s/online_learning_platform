@@ -1,17 +1,35 @@
 """ORM 模型聚合。新增模型请在此导入，确保 Alembic autogenerate 能发现。"""
 from app.models.user import User
-# 新增以下导入（假设 course 相关模型已存在，一并导出）
+
+# BE-A 模型（stub，BE-A 后续补全字段）
+from app.models.course import Course, CourseStatus
+from app.models.chapter import Chapter
+from app.models.courseware import Courseware, CoursewareType
+
+# BE-B 模型
 from app.models.enrollment import Enrollment, EnrollmentStatus
 from app.models.learning_record import LearningRecord
 from app.models.learning_calendar import LearningCalendar
 from app.models.note import Note
 from app.models.favorite import Favorite, FavoriteTargetType
 
-# 假设已存在的 Course / Courseware / Chapter 模型，如果未创建需要您补齐
-# from app.models.course import Course, Courseware, Chapter
+# BE-C 模型
+from app.models.knowledge_point import KnowledgePoint
+from app.models.question import Question, QuestionKnowledgePoint, QuestionType
+from app.models.exam import (
+    Exam, ExamStatus, ExamQuestion, ExamRecord, ExamRecordStatus, WrongQuestion,
+)
+from app.models.qa_history import QAHistory
 
 __all__ = [
+    # BE-A
     "User",
+    "Course",
+    "CourseStatus",
+    "Chapter",
+    "Courseware",
+    "CoursewareType",
+    # BE-B
     "Enrollment",
     "EnrollmentStatus",
     "LearningRecord",
@@ -19,5 +37,16 @@ __all__ = [
     "Note",
     "Favorite",
     "FavoriteTargetType",
-    # "Course", "Courseware", "Chapter",  # 取消注释当实际存在时
+    # BE-C
+    "KnowledgePoint",
+    "Question",
+    "QuestionType",
+    "QuestionKnowledgePoint",
+    "Exam",
+    "ExamStatus",
+    "ExamQuestion",
+    "ExamRecord",
+    "ExamRecordStatus",
+    "WrongQuestion",
+    "QAHistory",
 ]
