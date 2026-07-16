@@ -49,3 +49,5 @@ docker/volumes/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+mysql_data/mysql.sock
