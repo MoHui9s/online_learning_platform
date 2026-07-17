@@ -1,7 +1,7 @@
 """RAG 智能答疑服务：文档解析 → 切块 → 向量化 → 检索 → LLM 生成。
 
 依赖：LangChain 0.1+、ChromaDB 0.5+、OpenAI 兼容接口。
-chromadb 客户端版本与容器镜像 chromadb/chroma:0.5.5 对齐。
+chromadb 客户端版本与容器镜像 chromadb/chroma:0.5.3 对齐。
 """
 from typing import AsyncIterator
 
