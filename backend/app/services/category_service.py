@@ -1,9 +1,11 @@
 """课程分类 Service：分类树 CRUD。"""
+
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
+from app.models.course import Course
 
 
 def get_tree(db: Session) -> list[dict]:
@@ -19,11 +21,15 @@ def get_tree(db: Session) -> list[dict]:
             "children": [_node(c) for c in cat.children] if cat.children else None,
         }
 
-    roots = db.execute(
-        select(Category)
-        .where(Category.parent_id.is_(None))
-        .order_by(Category.sort_order)
-    ).scalars().all()
+    roots = (
+        db.execute(
+            select(Category)
+            .where(Category.parent_id.is_(None))
+            .order_by(Category.sort_order)
+        )
+        .scalars()
+        .all()
+    )
 
     return [_node(r) for r in roots]
 
@@ -51,7 +57,11 @@ def create(db: Session, name: str, parent_id: int | None, sort_order: int) -> Ca
 
 
 def update(
-    db: Session, category_id: int, name: str | None, parent_id: int | None, sort_order: int | None
+    db: Session,
+    category_id: int,
+    name: str | None,
+    parent_id: int | None,
+    sort_order: int | None,
 ) -> Category:
     cat = get_by_id(db, category_id)
     if name is not None:
@@ -69,7 +79,21 @@ def update(
 
 def delete(db: Session, category_id: int) -> None:
     cat = get_by_id(db, category_id)
+    # 拦截：有子分类
     if cat.children:
-        raise HTTPException(status_code=400, detail="请先删除子分类")
+        raise HTTPException(
+            status_code=400, detail="该分类下存在子分类，请先删除子分类"
+        )
+    # 拦截：有关联课程
+    course_count = db.execute(
+        select(func.count())
+        .select_from(Course)
+        .where(Course.category_id == category_id)
+    ).scalar()
+    if course_count > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"该分类下关联了 {course_count} 门课程，请先迁移课程到其他分类",
+        )
     db.delete(cat)
     db.commit()

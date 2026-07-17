@@ -1,10 +1,11 @@
 """题库 CRUD。"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_teacher
 from app.models.question import Question, QuestionKnowledgePoint, QuestionType
 from app.models.user import User
 from app.schemas.common import paginate, success
@@ -15,21 +16,22 @@ router = APIRouter(prefix="/questions", tags=["questions"])
 
 def _sync_knowledge_points(db: Session, question_id: int, kp_ids: list[int]) -> None:
     """同步题目↔知识点关联（先删后插）。"""
-    db.execute(
-        select(QuestionKnowledgePoint).where(
-            QuestionKnowledgePoint.question_id == question_id
+    existing = (
+        db.execute(
+            select(QuestionKnowledgePoint).where(
+                QuestionKnowledgePoint.question_id == question_id
+            )
         )
+        .scalars()
+        .all()
     )
-    existing = db.execute(
-        select(QuestionKnowledgePoint).where(
-            QuestionKnowledgePoint.question_id == question_id
-        )
-    ).scalars().all()
     for e in existing:
         db.delete(e)
     db.flush()
     for kp_id in kp_ids:
-        db.add(QuestionKnowledgePoint(question_id=question_id, knowledge_point_id=kp_id))
+        db.add(
+            QuestionKnowledgePoint(question_id=question_id, knowledge_point_id=kp_id)
+        )
     db.flush()
 
 
@@ -67,9 +69,15 @@ def list_questions(
 
     total = len(db.execute(count_stmt).scalars().all())
 
-    items = db.execute(
-        stmt.order_by(Question.id.desc()).offset((page - 1) * page_size).limit(page_size)
-    ).scalars().all()
+    items = (
+        db.execute(
+            stmt.order_by(Question.id.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
+        .scalars()
+        .all()
+    )
 
     result = []
     for q in items:
@@ -79,7 +87,9 @@ def list_questions(
                 select(QuestionKnowledgePoint).where(
                     QuestionKnowledgePoint.question_id == q.id
                 )
-            ).scalars().all()
+            )
+            .scalars()
+            .all()
         ]
         d = QuestionOut.model_validate(q).model_dump()
         d["knowledge_point_ids"] = kp_ids
@@ -106,7 +116,9 @@ def get_question(
             select(QuestionKnowledgePoint).where(
                 QuestionKnowledgePoint.question_id == q.id
             )
-        ).scalars().all()
+        )
+        .scalars()
+        .all()
     ]
     d = QuestionOut.model_validate(q).model_dump()
     d["knowledge_point_ids"] = kp_ids
@@ -117,7 +129,7 @@ def get_question(
 def create_question(
     payload: QuestionCreate,
     db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
+    current: User = Depends(require_teacher),
 ):
     """创建题目（教师/admin）。"""
     q = Question(
@@ -147,7 +159,7 @@ def update_question(
     question_id: int,
     payload: QuestionUpdate,
     db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
+    current: User = Depends(require_teacher),
 ):
     """更新题目。"""
     q = db.execute(
@@ -174,7 +186,9 @@ def update_question(
             select(QuestionKnowledgePoint).where(
                 QuestionKnowledgePoint.question_id == q.id
             )
-        ).scalars().all()
+        )
+        .scalars()
+        .all()
     ]
     d = QuestionOut.model_validate(q).model_dump()
     d["knowledge_point_ids"] = kp_ids_final
@@ -185,7 +199,7 @@ def update_question(
 def delete_question(
     question_id: int,
     db: Session = Depends(get_db),
-    current: User = Depends(get_current_user),
+    current: User = Depends(require_teacher),
 ):
     """删除题目。"""
     q = db.execute(
@@ -195,13 +209,74 @@ def delete_question(
         raise HTTPException(status_code=404, detail="题目不存在")
 
     # 删除知识点关联
-    for qkp in db.execute(
-        select(QuestionKnowledgePoint).where(
-            QuestionKnowledgePoint.question_id == question_id
+    for qkp in (
+        db.execute(
+            select(QuestionKnowledgePoint).where(
+                QuestionKnowledgePoint.question_id == question_id
+            )
         )
-    ).scalars().all():
+        .scalars()
+        .all()
+    ):
         db.delete(qkp)
 
     db.delete(q)
     db.commit()
     return success(message="已删除")
+
+
+# ─── 题目 ↔ 知识点绑定/解绑 ───
+
+
+@router.post("/{question_id}/knowledge-points/{kp_id}")
+def bind_knowledge_point(
+    question_id: int,
+    kp_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_teacher),
+):
+    """将题目绑定到知识点（多对多）。"""
+    from app.models.knowledge_point import KnowledgePoint
+
+    q = db.get(Question, question_id)
+    if not q:
+        raise HTTPException(status_code=404, detail="题目不存在")
+    kp = db.get(KnowledgePoint, kp_id)
+    if not kp:
+        raise HTTPException(status_code=404, detail="知识点不存在")
+    if kp.course_id != q.course_id:
+        raise HTTPException(status_code=400, detail="知识点与题目不属于同一课程")
+
+    exists = db.execute(
+        select(QuestionKnowledgePoint).where(
+            QuestionKnowledgePoint.question_id == question_id,
+            QuestionKnowledgePoint.knowledge_point_id == kp_id,
+        )
+    ).scalar_one_or_none()
+    if exists:
+        raise HTTPException(status_code=409, detail="已绑定")
+
+    db.add(QuestionKnowledgePoint(question_id=question_id, knowledge_point_id=kp_id))
+    db.commit()
+    return success(message="绑定成功")
+
+
+@router.delete("/{question_id}/knowledge-points/{kp_id}")
+def unbind_knowledge_point(
+    question_id: int,
+    kp_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_teacher),
+):
+    """解除题目与知识点的绑定。"""
+    qkp = db.execute(
+        select(QuestionKnowledgePoint).where(
+            QuestionKnowledgePoint.question_id == question_id,
+            QuestionKnowledgePoint.knowledge_point_id == kp_id,
+        )
+    ).scalar_one_or_none()
+    if not qkp:
+        raise HTTPException(status_code=404, detail="未绑定")
+    db.delete(qkp)
+    db.commit()
+    return success(message="解绑成功")

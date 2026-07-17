@@ -1,4 +1,5 @@
 """课程 + 章节 Schema。"""
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,6 +32,7 @@ class CourseUpdate(BaseModel):
 
 class CourseListItem(BaseModel):
     """列表项（轻量，不含章节树）。"""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -47,6 +49,7 @@ class CourseListItem(BaseModel):
 
 class CourseOut(BaseModel):
     """详情（含分类信息 + 章节树）。"""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -78,6 +81,25 @@ class ChapterUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=200)
     parent_id: int | None = None
     sort_order: int | None = None
+
+
+class ChapterSortItem(BaseModel):
+    """批量排序条目。"""
+
+    id: int
+    sort_order: int
+
+
+class ChapterSortRequest(BaseModel):
+    """批量排序请求体。"""
+
+    items: list[ChapterSortItem]
+
+
+class CourseStatusRequest(BaseModel):
+    """状态流转请求体。"""
+
+    status: CourseStatus
 
 
 class ChapterOut(BaseModel):
