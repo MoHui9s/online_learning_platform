@@ -1,10 +1,38 @@
 """考试系统 Pydantic v2 模型：知识点 / 题库 / 考试 / 作答 / 错题本。"""
+
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Self
+
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.exam import ExamRecordStatus, ExamStatus
 from app.models.question import QuestionType
+
+
+def _validate_answer(type, options, answer):
+    """校验 answer 结构必须匹配题型。"""
+    if type is None or answer is None:
+        return
+    if type == "short_answer":
+        if "text" not in answer:
+            raise ValueError("简答题答案须包含 text 字段")
+        return
+    keys = answer.get("keys", [])
+    if not isinstance(keys, list) or not keys:
+        raise ValueError(f"{type} 答案须包含 keys")
+    if type == "judge":
+        option_keys = {"A", "B"}
+    else:
+        option_keys = {o["key"] for o in (options or [])}
+    if not option_keys:
+        return
+    if type in ("single", "judge"):
+        if len(keys) != 1 or keys[0] not in option_keys:
+            raise ValueError(f"{type} 答案须为选项中的单个 key")
+    elif type == "multiple":
+        if not set(keys).issubset(option_keys):
+            raise ValueError("多选答案 keys 须为选项 key 的子集")
 
 
 # ===================== 知识点 =====================
@@ -44,6 +72,11 @@ class QuestionCreate(BaseModel):
     score: int = Field(default=5, ge=1)
     knowledge_point_ids: list[int] = []  # 关联知识点
 
+    @model_validator(mode="after")
+    def _check_answer(self) -> Self:
+        _validate_answer(self.type, self.options, self.answer)
+        return self
+
 
 class QuestionUpdate(BaseModel):
     type: QuestionType | None = None
@@ -54,6 +87,11 @@ class QuestionUpdate(BaseModel):
     difficulty: int | None = Field(default=None, ge=1, le=5)
     score: int | None = Field(default=None, ge=1)
     knowledge_point_ids: list[int] | None = None
+
+    @model_validator(mode="after")
+    def _check_answer(self) -> Self:
+        _validate_answer(self.type, self.options, self.answer)
+        return self
 
 
 class QuestionOut(BaseModel):
@@ -102,6 +140,7 @@ class ExamCreate(BaseModel):
 
 class ExamSetQuestions(BaseModel):
     """组卷：向考试添加题目。"""
+
     questions: list["ExamQuestionItem"]
 
 
@@ -143,11 +182,13 @@ class ExamOut(BaseModel):
 
 class ExamDetailOut(ExamOut):
     """教师视角：含题目详情（带答案）。"""
+
     questions: list[QuestionOut] = []
 
 
 class ExamPreviewOut(ExamOut):
     """学生视角：仅含题目题干（不含答案）。"""
+
     questions: list[QuestionBrief] = []
 
 
@@ -185,6 +226,7 @@ class ExamRecordOut(BaseModel):
 
 class ExamRecordDetailOut(ExamRecordOut):
     """作答详情：含题目 + 正确答案（交卷后可见）。"""
+
     questions: list[QuestionOut] = []
 
 

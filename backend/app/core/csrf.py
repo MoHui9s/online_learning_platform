@@ -16,6 +16,9 @@ EXEMPT_PATHS = {"/api/v1/auth/login", "/api/v1/auth/register"}
 
 class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        # 开发环境跳过 CSRF（Swagger 无法加自定义 header）
+        if settings.APP_ENV == "development":
+            return await call_next(request)
         if request.method not in SAFE_METHODS and request.url.path not in EXEMPT_PATHS:
             header = request.headers.get(settings.CSRF_HEADER_NAME)
             cookie = request.cookies.get(settings.CSRF_COOKIE_NAME)
