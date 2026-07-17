@@ -1,4 +1,5 @@
 """选课模块路由（选课、退课、我的课程列表）。"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -10,6 +11,7 @@ from app.schemas.learning import EnrollActionResponse, MyCourseItem
 from app.services.enrollment import EnrollmentService
 
 router = APIRouter(tags=["enroll"])
+
 
 @router.post("/courses/{course_id}/enroll")
 def enroll_course(
@@ -28,7 +30,7 @@ def enroll_course(
                 enrolled_at=enrollment.enrolled_at,
                 message="选课成功",
             ).model_dump(),
-            message="选课成功"
+            message="选课成功",
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -51,7 +53,7 @@ def drop_course(
                 enrolled_at=None,
                 message="退课成功",
             ).model_dump(),
-            message="退课成功"
+            message="退课成功",
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -68,7 +70,5 @@ def get_my_courses(
     items, total = EnrollmentService.get_my_courses(
         db, current_user.id, page, page_size
     )
-    return success(
-        data=paginate(items, total, page, page_size),
-        message="获取成功"
-    )
+    items = [MyCourseItem.model_validate(i).model_dump() for i in items]
+    return success(data=paginate(items, total, page, page_size), message="获取成功")

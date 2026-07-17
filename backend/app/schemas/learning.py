@@ -1,4 +1,5 @@
 """学习模块相关 Pydantic 模型（选课、进度）。"""
+
 from datetime import datetime
 from typing import Optional
 
@@ -8,23 +9,19 @@ from app.models.enrollment import EnrollmentStatus
 
 
 # ---------- 选课 ----------
-class EnrollRequest(BaseModel):
-    """选课请求体（POST /courses/{id}/enroll）。
-    路径参数已包含 course_id，无需额外字段。
-    """
-    pass
-
-
-class EnrollResponse(BaseModel):
+class EnrollActionResponse(BaseModel):
     """选课/退课成功后返回的简要信息。"""
+
     course_id: int
     status: EnrollmentStatus
-    enrolled_at: datetime
+    enrolled_at: Optional[datetime] = None
+    message: str
 
 
 # ---------- 我的课程列表 ----------
 class MyCourseItem(BaseModel):
     """我的课程列表中的单条记录（含整体进度）。"""
+
     model_config = ConfigDict(from_attributes=True)
 
     # 课程信息（从 courses 表关联）
@@ -42,6 +39,7 @@ class MyCourseItem(BaseModel):
 # ---------- 进度上报 ----------
 class ProgressReportRequest(BaseModel):
     """进度上报请求体（PUT /learning-records）。"""
+
     courseware_id: int = Field(..., description="课件ID")
 
     # 视频课件必传
@@ -60,6 +58,7 @@ class ProgressReportRequest(BaseModel):
 
 class ProgressReportResponse(BaseModel):
     """进度上报后的返回结果。"""
+
     courseware_id: int
     progress_percent: float = Field(description="该课件当前进度 (0-100)")
     is_completed: bool = Field(description="是否已达成 95% 完成标记")
@@ -70,6 +69,7 @@ class ProgressReportResponse(BaseModel):
 # ---------- 断点获取 ----------
 class ResumePointResponse(BaseModel):
     """断点获取响应（GET /courseware/{id}/progress）。"""
+
     model_config = ConfigDict(from_attributes=True)
 
     courseware_id: int
@@ -80,9 +80,3 @@ class ResumePointResponse(BaseModel):
     total_duration: Optional[int] = Field(
         default=None, description="课件总时长(秒)，仅视频有值"
     )
-
-class EnrollActionResponse(BaseModel):
-    course_id: int
-    status: EnrollmentStatus
-    enrolled_at: Optional[datetime] = None
-    message: str

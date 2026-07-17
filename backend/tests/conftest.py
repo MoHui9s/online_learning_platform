@@ -1,4 +1,5 @@
 """pytest fixture — 真实 ORM 模型 + SQLite Integer PK 补丁 + Redis Mock。"""
+
 import os
 from unittest.mock import MagicMock, patch
 import pytest
@@ -17,20 +18,21 @@ _mock_redis.scan_iter.return_value = []
 patch("app.core.redis.get_redis", return_value=_mock_redis).start()
 patch("app.services.course_service.get_redis", return_value=_mock_redis).start()
 
-from app.core.database import get_db                      # noqa: E402
+from app.core.database import get_db  # noqa: E402
 from app.core.security import create_access_token, generate_csrf_token  # noqa: E402
-from app.main import app                                  # noqa: E402
-from app.models.user import User, UserRole                # noqa: E402
-from app.models.category import Category                  # noqa: E402
-from app.models.chapter import Chapter                    # noqa: E402
-from app.models.course import Course                      # noqa: E402
-from app.models.courseware import Courseware              # noqa: E402
+from app.main import app  # noqa: E402
+from app.models.user import User, UserRole  # noqa: E402
+from app.models.category import Category  # noqa: E402
+from app.models.chapter import Chapter  # noqa: E402
+from app.models.course import Course  # noqa: E402
+from app.models.courseware import Courseware  # noqa: E402
+from app.models.enrollment import Enrollment  # noqa: E402
 
 TEST_DB = "sqlite:///./test.db"
 test_engine = create_engine(TEST_DB, connect_args={"check_same_thread": False})
 TestSessionLocal = sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
-TEST_MODELS = [User, Category, Course, Chapter, Courseware]
+TEST_MODELS = [User, Category, Course, Chapter, Courseware, Enrollment]
 
 # BigInteger → Integer（SQLite 才能自增）
 for model in TEST_MODELS:
