@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from app.models.exam import WrongQuestion
 from app.models.question import Question, QuestionKnowledgePoint
 from app.models.knowledge_point import KnowledgePoint
-from app.services.rag_service import get_llm_config
 
 
 def generate_suggestions(db: Session, user_id: int) -> dict:
