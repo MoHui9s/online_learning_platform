@@ -15,7 +15,7 @@ class Category(Base):
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     parent_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("categories.id"), nullable=True, index=True
+        BigInteger, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

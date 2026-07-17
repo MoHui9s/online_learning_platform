@@ -2,7 +2,7 @@
 from datetime import datetime
 import enum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Numeric, func
+from sqlalchemy import BigInteger, DateTime, Enum, ForeignKey, Numeric, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -17,9 +17,9 @@ class EnrollmentStatus(str, enum.Enum):
 class Enrollment(Base):
     __tablename__ = "enrollments"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     course_id: Mapped[int] = mapped_column(
         ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
@@ -45,7 +45,7 @@ class Enrollment(Base):
     course = relationship("Course", backref="enrollments")
 
     __table_args__ = (
-        # 唯一约束：防止重复选课（软删除后复用记录）
-        # 注意：该约束不含 status，因此 dropped 记录也会占用名额，需要业务层处理复用逻辑
-        {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"},
+        # 唯一约束：防止重复选课。不含 status，dropped 记录也占用名额，复用逻辑在业务层处理。
+        # user_id 由本约束前缀覆盖，不再建单列索引。
+        UniqueConstraint("user_id", "course_id"),
     )

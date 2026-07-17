@@ -1,7 +1,7 @@
 """学习进度记录（对应 database-schema.md 的 learning_records 表）。"""
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, Numeric, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -10,9 +10,9 @@ from app.core.database import Base
 class LearningRecord(Base):
     __tablename__ = "learning_records"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     course_id: Mapped[int] = mapped_column(
         ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True
@@ -45,5 +45,7 @@ class LearningRecord(Base):
 
     __table_args__ = (
         # 唯一约束：每个用户对每个课件只能有一条记录
-        {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"},
+        UniqueConstraint("user_id", "courseware_id"),
+        # 复合索引：按用户+课程聚合查询学习进度（user_id 由此前缀覆盖，不建单列索引）
+        Index("ix_learning_records_user_course", "user_id", "course_id"),
     )

@@ -23,10 +23,10 @@ class Course(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     category_id: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("categories.id"), nullable=True, index=True
+        BigInteger, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True
     )
     teacher_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("users.id"), nullable=False, index=True
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     status: Mapped[CourseStatus] = mapped_column(
         Enum(CourseStatus), default=CourseStatus.draft, index=True

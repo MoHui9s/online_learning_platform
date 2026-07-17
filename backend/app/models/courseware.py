@@ -41,7 +41,7 @@ class Courseware(Base):
     duration: Mapped[int | None] = mapped_column(Integer, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     uploaded_by: Mapped[int | None] = mapped_column(
-        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

@@ -1,7 +1,7 @@
 """智能问答历史模型（qa_history 表）。"""
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, JSON, Text, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, JSON, Text, func
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,7 +11,7 @@ from app.core.database import Base
 class QAHistory(Base):
     __tablename__ = "qa_history"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
