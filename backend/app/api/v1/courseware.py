@@ -20,7 +20,7 @@ def list_courseware(chapter_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{chapter_id}/courseware")
-def upload_courseware(
+async def upload_courseware(
     chapter_id: int,
     title: str = Form(min_length=1, max_length=200),
     type: CoursewareType = Form(),
@@ -29,7 +29,7 @@ def upload_courseware(
     current: User = Depends(require_teacher),
     db: Session = Depends(get_db),
 ):
-    cw = courseware_service.upload(
+    cw = await courseware_service.upload(
         db, chapter_id, file, title, type, sort_order, current.id
     )
     return success(CoursewareOut.model_validate(cw).model_dump(), message="课件上传成功")

@@ -5,6 +5,7 @@ from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.models.courseware import Courseware, CoursewareType
 from app.services.chapter_service import get_by_id as get_chapter
 from app.utils.file_upload import save_upload
@@ -27,7 +28,7 @@ def get_by_id(db: Session, courseware_id: int) -> Courseware:
     return cw
 
 
-def upload(
+async def upload(
     db: Session,
     chapter_id: int,
     file: UploadFile,
@@ -38,7 +39,7 @@ def upload(
 ) -> Courseware:
     get_chapter(db, chapter_id)  # 校验章节存在
 
-    file_info = save_upload(file)
+    file_info = await save_upload(file)
 
     # 视频取时长（简单从文件名判断，或后续集成 ffprobe）
     duration = None
@@ -82,7 +83,7 @@ def update_courseware(
 def delete_courseware(db: Session, courseware_id: int) -> None:
     cw = get_by_id(db, courseware_id)
     # 删除物理文件
-    full_path = os.path.join("uploads", cw.file_path)
+    full_path = os.path.join(settings.UPLOAD_DIR, cw.file_path)
     if os.path.exists(full_path):
         os.remove(full_path)
     db.delete(cw)

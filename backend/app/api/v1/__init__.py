@@ -1,7 +1,19 @@
 """v1 路由聚合。新增模块路由在此挂载。"""
 from fastapi import APIRouter
 
-from app.api.v1 import auth, categories, courses, courseware,assistant,exams,knowledge_points,qa,questions,stats,wrong_questions,
+from app.api.v1 import (
+    assistant,
+    auth,
+    categories,
+    courses,
+    courseware,
+    exams,
+    knowledge_points,
+    qa,
+    questions,
+    stats,
+    wrong_questions,
+)
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
