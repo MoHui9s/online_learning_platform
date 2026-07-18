@@ -49,12 +49,11 @@ frontend/
 - **MVP 不接 HLS**；video.js 用普通 `video/mp4` source 即可。
 - 播放进度定时上报 `learning/progress`。
 
-## 6. 公共基础设施与节奏（FE×1）
+## 6. 公共基础设施与协作（FE1 / FE2）
 
-- 路由配置、Axios 封装（`utils/request.js`）、全局布局、Pinia 用户 store 为公共地基，**已于 Day1 搭好并合入 main**——业务页面直接复用，不要另起炉灶。
-- 复杂通用组件（如 `VideoPlayer`）做成通用组件，多页面复用。
-- 页面开发节奏对齐根 CLAUDE.md 第 8.2 节：Day3-4 课程/播放页（M17）→ Day5-7 答疑 SSE 页 → Day8 考试/统计页（M18/M19）。
-- 与后端联调前先按 Swagger（`/docs`）对齐接口协议；mock 数据结构必须与统一响应体/分页结构一致。
+- 路由配置、Axios 封装、全局布局、Pinia 用户 store 由 **FE1 主导搭建**，FE2 共同维护。
+- 复杂通用组件（如 `VideoPlayer`）由 FE1 开发，FE2 复用。
+- FE1：课程管理/在线学习/个人中心；FE2：智能答疑/考试测评/学习分析（详见需求确认书补充分工）。
 
 ## 7. 环境变量
 

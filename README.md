@@ -12,7 +12,7 @@
 |----|------|
 | 前端 | Vue 3.4+、Vite 5、Element Plus 2.6+、Pinia、Vue Router、Axios、video.js、ECharts |
 | 后端 | Python 3.11+、FastAPI 0.110+、SQLAlchemy 2.0、Alembic、Pydantic v2、python-jose、passlib[bcrypt] |
-| AI | LangChain 0.2.16、ChromaDB **0.5.3**（客户端与镜像同版本钉死）、OpenAI 兼容接口（可切 Ollama） |
+| AI | LangChain 0.1+、ChromaDB 0.5+、OpenAI 兼容接口（可切 Ollama） |
 | 数据 | MySQL 8.0、Redis 7.0、ChromaDB（持久化） |
 | 部署 | Docker 24+、Docker Compose 2.20+ |
 
@@ -21,7 +21,6 @@
 1. **认证**：JWT 存 HttpOnly Cookie（access + refresh）+ CSRF 双提交 token。前端不加 `Authorization` header，写操作带 `X-CSRF-Token`；SSE 走原生 `EventSource` 靠 cookie 鉴权。
 2. **异步**：MVP 用 FastAPI `BackgroundTasks`，不引入 Celery（二期）。
 3. **视频**：MVP 用 HTTP Range 字节流（video.js 支持断点续播/倍速），不做 HLS 转码（二期）。
-4. **RAG 版本钉定**：chromadb 客户端与 Docker 镜像统一 **0.5.3**、langchain 全家 0.2.x（0.5.4/0.5.5 被 langchain-chroma 拉黑，勿升级；详见根 `CLAUDE.md` 决策 4）。
 
 ## 目录结构
 
@@ -92,10 +91,7 @@ npm run dev                   # 默认 http://localhost:5173
 #   API 文档: http://localhost:8000/docs
 ```
 
-> 说明：ChromaDB 容器内监听 8000，宿主映射到 **8001**，把宿主 8000 留给后端 uvicorn。后端连接 Chroma 时用 `http://localhost:8001`。MySQL 宿主端口为 **3307**（规避本机 3306 占用）。
->
-> ⚠️ **本地库建于 Day2 之前的成员**：初始迁移已重写为 `6a1c0f34e2a6`（ORM autogenerate，废弃旧手写 DDL `0001`），需重建本地库：
-> `docker compose down mysql && docker volume rm online_learning_platform_mysql_data && docker compose up -d mysql && alembic upgrade head`
+> 说明：ChromaDB 容器内监听 8000，宿主映射到 **8001**，把宿主 8000 留给后端 uvicorn。后端连接 Chroma 时用 `http://localhost:8001`。
 
 ## 常用命令
 
@@ -109,7 +105,6 @@ docker compose down                 # 停止(保留卷/数据)
 uvicorn app.main:app --reload --port 8000
 alembic revision --autogenerate -m "描述"
 alembic upgrade head
-alembic check      # 模型与库一致性验收(应零输出)
 black . && flake8
 pytest
 
@@ -126,21 +121,15 @@ npm run lint
 - 除 `/auth/register`、`/auth/login` 外所有接口需认证。
 - Swagger：`http://localhost:8000/docs`。
 
-## 当前进度（截至 Day2）
+## 当前已实现（Day1 骨架）
 
-### Day1 骨架（已合入 main）
+已可运行的最小闭环，供各模块在其上并行开发：
 
-- **后端**：认证接口 `/api/v1/auth/{register,login,refresh,logout,me}` + `/health`；JWT 存 HttpOnly Cookie + CSRF 双提交中间件；统一响应体与异常处理。
-- **前端**：登录 / 注册 / 首页；Axios 全局封装（`withCredentials` + CSRF 拦截器 + 401 自动 refresh 重放）；Pinia 用户 store；路由登录守卫。
-- **验证**：后端认证闭环通过 TestClient 冒烟测试；前端 `npm run build` 通过。
+- **后端**：认证接口 `/api/v1/auth/{register,login,refresh,logout,me}` + `/health`；JWT 存 HttpOnly Cookie + CSRF 双提交中间件；统一响应体与异常处理；`users` 表模型与 Alembic 迁移（`0001`）。
+- **前端**：登录 / 注册 / 首页；Axios 全局封装（`withCredentials` + CSRF 拦截器 + 401 自动 refresh）；Pinia 用户 store；路由登录守卫。
+- **验证**：后端认证闭环已通过 TestClient 冷烟测试；前端 `npm run build` 通过。
 
-### Day2 模型基线与 RAG 验证（代码就绪，待提 PR 合并）
-
-- **数据库（M2）**：18 张业务表 SQLAlchemy 模型全部落定，**schema 真源反转为 ORM 模型**——统一签名 `BIGINT` 主键、真实 `UniqueConstraint`/`Index` 声明、`app/core/database.py` 命名约定（`ix_*`/`uq_*`/`fk_*`/`pk_*`）；初始迁移重写为 `6a1c0f34e2a6`（autogenerate 生成，废弃手写 DDL），`alembic check` 零输出、downgrade/upgrade 往返通过。
-- **RAG（M13 spike）**：`backend/scripts/rag_spike.py` 跑通全链路（PDF 解析 → 500/50 切片 → 向量化 → ChromaDB 检索 → LLM 流式回答），验证后已清理测试数据；版本决策落定为 chromadb 全家 0.5.3（决策 4）。
-- **基础设施**：MySQL 卷已用 `.env` 密码重建；chroma 容器切至 0.5.3 镜像并通过读写冒烟。
-
-> 其余业务模块（课程/学习/答疑/考试/分析）按十日计划推进，见根 `CLAUDE.md` 第 8 节的分工与里程碑。端到端跑通需先 `docker compose up -d mysql redis chromadb` 并 `alembic upgrade head` 建表。
+> ⚠️ 端到端跑通需先 `docker compose up -d mysql` 并 `alembic upgrade head` 建表。其余业务模块（课程/学习/答疑/考试/分析）尚未实现，按 `docs/database-schema.md` 与各分层 `CLAUDE.md` 开发。
 
 ## 分支与 PR 流程
 

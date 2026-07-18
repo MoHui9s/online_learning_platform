@@ -30,5 +30,10 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  return { user, login, register, fetchMe, logout }
+  async function updateProfile(payload) {
+    user.value = await authApi.updateProfile(payload)
+    return user.value
+  }
+
+  return { user, login, register, fetchMe, logout, updateProfile }
 })

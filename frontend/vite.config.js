@@ -12,10 +12,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    // 开发期可选：直接连后端 8000（已用 CORS+cookie 方案，无需代理；
-    // 如遇跨站 cookie 问题可改用同源代理，取消下方注释）
-    // proxy: {
-    //   '/api': { target: 'http://localhost:8000', changeOrigin: true },
-    // },
+    // 同源代理：避免跨域 SameSite cookie 问题。
+    // <video> / EventSource 等子资源请求视作跨站，SameSite=Lax 不送 cookie，
+    // 走代理后所有请求同源 → cookie 正常携带。
+    proxy: {
+      '/api': { target: 'http://localhost:8000', changeOrigin: true },
+      '/uploads': { target: 'http://localhost:8000', changeOrigin: true },
+    },
   },
 })

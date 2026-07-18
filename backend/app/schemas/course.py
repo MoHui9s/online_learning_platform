@@ -29,6 +29,11 @@ class CourseUpdate(BaseModel):
     price: float | None = None
 
 
+class CourseStatusRequest(BaseModel):
+    """状态流转 — PATCH /courses/{id}/status。"""
+    status: CourseStatus
+
+
 class CourseListItem(BaseModel):
     """列表项（轻量，不含章节树）。"""
     model_config = ConfigDict(from_attributes=True)
@@ -80,6 +85,15 @@ class ChapterUpdate(BaseModel):
     sort_order: int | None = None
 
 
+class ChapterSortItem(BaseModel):
+    id: int
+    sort_order: int
+
+
+class ChapterSortRequest(BaseModel):
+    items: list[ChapterSortItem]
+
+
 class ChapterOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -90,3 +104,34 @@ class ChapterOut(BaseModel):
     sort_order: int
     created_at: datetime
     children: list["ChapterOut"] | None = None
+
+
+# ─── 课件 ───────────────────────────────────────────────
+
+class CoursewareCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    type: str = Field(min_length=1, max_length=50)
+    sort_order: int = 0
+
+
+class CoursewareUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=200)
+    sort_order: int | None = None
+
+
+class CoursewareOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    chapter_id: int
+    title: str
+    type: str
+    file_path: str
+    file_name: str | None = None
+    file_size: int | None = None
+    mime_type: str | None = None
+    duration: int | None = None
+    sort_order: int = 0
+    uploaded_by: int | None = None
+    created_at: datetime
+    updated_at: datetime

@@ -13,6 +13,7 @@
     "axios": "^1.6.8",
     "echarts": "^5.5.0",
     "element-plus": "^2.6.3",
+    "json-schema-traverse": "^0.4.1",
     "pinia": "^2.1.7",
     "video.js": "^8.10.0",
     "vue": "^3.4.21",

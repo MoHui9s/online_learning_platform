@@ -1,9 +1,19 @@
 <script setup>
-import { RouterView } from 'vue-router'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppLayout from '@/components/AppLayout.vue'
+
+const route = useRoute()
+const showLayout = computed(() => !route.meta.public)
 </script>
 
 <template>
-  <RouterView />
+  <AppLayout v-if="showLayout">
+    <RouterView />
+  </AppLayout>
+  <template v-else>
+    <RouterView />
+  </template>
 </template>
 
 <style>

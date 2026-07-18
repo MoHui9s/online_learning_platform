@@ -20,3 +20,7 @@ export function refresh() {
 export function getMe() {
   return request.get('/auth/me')
 }
+
+export function updateProfile(data) {
+  return request.put('/users/me', data)
+}

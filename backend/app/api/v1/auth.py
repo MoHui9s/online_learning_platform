@@ -22,13 +22,10 @@ from app.core.security import (
     verify_password,
 )
 from app.models.user import User
-from app.schemas.auth import LoginRequest, RegisterRequest, UpdateProfileRequest, UserOut
+from app.schemas.auth import LoginRequest, RegisterRequest, UserOut
 from app.schemas.common import success
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-# 用户资料路由挂在 /users 下
-user_router = APIRouter(prefix="/users", tags=["users"])
 
 
 def _issue_session(response: Response, user: User) -> None:
@@ -102,35 +99,3 @@ def logout(response: Response, _: User = Depends(get_current_user)):
 @router.get("/me")
 def me(current: User = Depends(get_current_user)):
     return success(UserOut.model_validate(current).model_dump())
-
-
-@user_router.put("/me")
-def update_profile(
-    payload: UpdateProfileRequest,
-    current: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
-):
-    """更新当前用户资料（昵称/头像/改密）。"""
-    changed = False
-
-    if payload.nickname is not None:
-        current.nickname = payload.nickname
-        changed = True
-
-    if payload.avatar_url is not None:
-        current.avatar_url = payload.avatar_url
-        changed = True
-
-    if payload.new_password:
-        if not payload.current_password or not verify_password(
-            payload.current_password, current.password_hash
-        ):
-            raise HTTPException(status_code=400, detail="当前密码错误")
-        current.password_hash = hash_password(payload.new_password)
-        changed = True
-
-    if changed:
-        db.commit()
-        db.refresh(current)
-
-    return success(UserOut.model_validate(current).model_dump(), message="资料已更新")

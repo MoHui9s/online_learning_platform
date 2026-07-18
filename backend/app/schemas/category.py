@@ -1,17 +1,15 @@
-"""课程分类 Schema。"""
+"""分类 Schema — CategoryCreate / CategoryUpdate / CategoryOut（递归树）。"""
+from __future__ import annotations
+
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class CategoryBase(BaseModel):
+class CategoryCreate(BaseModel):
     name: str = Field(min_length=1, max_length=64)
     parent_id: int | None = None
     sort_order: int = 0
-
-
-class CategoryCreate(CategoryBase):
-    pass
 
 
 class CategoryUpdate(BaseModel):
@@ -26,7 +24,7 @@ class CategoryOut(BaseModel):
     id: int
     name: str
     parent_id: int | None = None
-    sort_order: int
+    sort_order: int = 0
     created_at: datetime
-    # 不默认展开 children，由分类树接口按需返回
-    children: list["CategoryOut"] | None = None
+    updated_at: datetime
+    children: list[CategoryOut] = Field(default_factory=list)
