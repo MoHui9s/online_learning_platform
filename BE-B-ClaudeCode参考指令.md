@@ -37,7 +37,7 @@
 
 需要做的事情：
 
-1. 审计 app/services/exam_service.py 的 submit_exam() 方法：
+1. 审计 app/services/exam_service.py 的 grade_and_persist() 方法和 app/api/v1/exams.py 中的 submit 端点：
    - 单选题（single）判分逻辑是否正确（完全匹配才算对）
    - 多选题（multiple）判分逻辑是否正确（部分匹配是否给分？建议完全匹配）
    - 判断题（如果有）判分逻辑是否正确
@@ -115,7 +115,7 @@ git push origin integration-day3
 - 时长数据格式应为：[{date: "2026-07-01", duration: 1800}, ...]
 - 知识掌握度格式应为：[{knowledge: "知识点名", score: 85}, ...]
 
-如果格式不对，修改 services/stats_service.py 中的对应方法。
+如果格式不对，修改 app/api/v1/stats.py 中对应的查询/返回逻辑。
 
 同时：
 - 确保所有 stats 端点需要认证（get_current_user 依赖）
